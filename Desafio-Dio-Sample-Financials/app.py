@@ -24,6 +24,17 @@ def load_data():
 
 df = load_data()
 
+@st.cache_data
+def load_data():
+    # Se o arquivo estiver na raiz do seu projeto no GitHub:
+    url = "Financial Sample.xlsx" 
+    # Use engine='openpyxl' explicitamente para arquivos .xlsx
+    df = pd.read_excel(url, engine='openpyxl')
+    return df
+    
+    df = load_data()
+    st.write(df)
+
 # 3. BARRA LATERAL (SIDEBAR) - Filtros e Navegação
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/3/34/Microsoft_Power_BI_Logo.png", width=50)
 st.sidebar.title("Menu de Navegação")
