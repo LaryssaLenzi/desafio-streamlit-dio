@@ -1,45 +1,60 @@
 import streamlit as st
 import pandas as pd
+import os
 
 st.set_page_config(page_title="Dashboard Financeiro", layout="wide")
 
 @st.cache_data
 def load_data():
-    # URL RAW do GitHub (importante: deve começar com raw.githubusercontent.com)
-    url = "https://raw.githubusercontent.com/LaryssaLenzi/desafio-streamlit-dio/main/Financial%20Sample.xlsx"
+    # 1. Procurar o arquivo em qualquer lugar do repositório
+    target_file = "Financial Sample.xlsx"
+    file_path = None
     
+    for root, dirs, files in os.walk("."):
+        if target_file in files:
+            file_path = os.path.join(root, target_file)
+            break
+    
+    if file_path is None:
+        st.error(f"Arquivo '{target_file}' não encontrado no repositório!")
+        return None
+
     try:
-        # O pandas consegue ler a URL diretamente se tiver o openpyxl instalado
-        df = pd.read_excel(url, engine='openpyxl')
-        # Limpa espaços extras nos nomes das colunas
+        # 2. Ler o arquivo usando o caminho encontrado
+        df = pd.read_excel(file_path, engine='openpyxl')
         df.columns = [c.strip() for c in df.columns]
         return df
     except Exception as e:
-        st.error(f"Erro ao carregar o arquivo via URL: {e}")
+        st.error(f"Erro ao ler o arquivo: {e}")
         return None
 
+# Execução
 df = load_data()
 
 if df is not None:
-    st.title("📊 Dashboard Financeiro (via GitHub URL)")
+    st.title("📊 Dashboard Financeiro DIO")
     
-    # Sidebar - Filtros
+    # Filtros na Sidebar
     st.sidebar.header("Filtros")
-    paises = st.sidebar.multiselect(
-        "Selecione os Países",
-        options=df["Country"].unique(),
-        default=df["Country"].unique()
-    )
-
-    # Filtragem
+    paises = st.sidebar.multiselect("Países", df["Country"].unique(), df["Country"].unique())
+    
     df_filtrado = df[df["Country"].isin(paises)]
 
-    # Métricas e Gráfico
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.metric("Total de Vendas", f"$ {df_filtrado['Sales'].sum():,.2f}")
-        st.dataframe(df_filtrado)
-    with col2:
-        st.bar_chart(df_filtrado.groupby("Country")["Sales"].sum())
+    # Layout de colunas
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Vendas", f"$ {df_filtrado['Sales'].sum():,.2f}")
+    m2.metric("Lucro", f"$ {df_filtrado['Profit'].sum():,.2f}")
+    m3.metric("Unidades", f"{df_filtrado['Units Sold'].sum():,.0f}")
+
+    st.divider()
+    
+    # Gráfico e Tabela
+    c1, c2 = st.columns(2)
+    with c1:
+        st.subheader("Vendas por Produto")
+        st.bar_chart(df_filtrado.groupby("Product")["Sales"].sum())
+    with c2:
+        st.subheader("Dados Filtrados")
+        st.dataframe(df_filtrado, height=400)
 else:
-    st.warning("Não foi possível carregar os dados. Verifique a URL ou o arquivo requirements.txt.")
+    st.info("💡 Dica: Certifique-se de que o arquivo 'Financial Sample.xlsx' foi enviado ao GitHub.")
