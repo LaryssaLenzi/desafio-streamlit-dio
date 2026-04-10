@@ -18,9 +18,13 @@ st.markdown("""
 def load_data():
     # O nome deve ser exatamente igual ao arquivo no GitHub
     file_path = "https://raw.githubusercontent.com/julianazanelatto/power_bi_analyst/main/Financial%20Sample.xlsx" 
-    df = pd.read_excel(file_path, engine='openpyxl')
-    return df
+    df.columns = [c.strip() for c in df.columns]
+        return df
+    except Exception as e:
+        st.error(f"Erro ao carregar o arquivo: {e}")
+        return None
 
+df = load_data()
 
 
 # 3. BARRA LATERAL (SIDEBAR) - Filtros e Navegação
@@ -35,7 +39,15 @@ paises = st.sidebar.multiselect("Países", options=df["Country"].unique(), defau
 segmentos = st.sidebar.multiselect("Segmentos", options=df["Segment"].unique(), default=df["Segment"].unique())
 
 # Aplicando Filtros
-df_filtered = df[(df["Country"].isin(paises)) & (df["Segment"].isin(segmentos))]
+if df is not None:
+    st.sidebar.header("Filtros")
+    
+    # Aqui é onde dava o erro. Agora com o 'if', ele só roda se 'df' existir.
+    paises = st.sidebar.multiselect(
+        "Países", 
+        options=df["Country"].unique(), 
+        default=df["Country"].unique()
+    )
 
 # 4. LÓGICA DAS PÁGINAS
 
