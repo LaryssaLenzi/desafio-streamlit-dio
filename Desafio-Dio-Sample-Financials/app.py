@@ -1,103 +1,65 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 
-# 1. CONFIGURAÇÃO DA PÁGINA
-st.set_page_config(page_title="DIO | Desafio Financials", layout="wide")
+# Configuração da página (opcional, mas recomendado)
+st.set_page_config(page_title="Dashboard Financeiro", layout="wide")
 
-# Estilização CSS para parecer um Dashboard profissional
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
-    </style>
-    """, unsafe_allow_html=True)
-
-# 2. CARREGAMENTO DOS DADOS
 @st.cache_data
 def load_data():
-    # O nome deve ser exatamente igual ao arquivo no GitHub
-    file_path = "https://raw.githubusercontent.com/julianazanelatto/power_bi_analyst/main/Financial%20Sample.xlsx" 
-    df.columns = [c.strip() for c in df.columns]
+    # O nome do arquivo deve ser exatamente como está no seu GitHub
+    file_path = "Financial Sample.xlsx"
+    try:
+        # Carrega o arquivo usando o motor openpyxl
+        df = pd.read_excel(file_path, engine='openpyxl')
+        # Limpa espaços em branco dos nomes das colunas
+        df.columns = [c.strip() for c in df.columns]
         return df
     except Exception as e:
         st.error(f"Erro ao carregar o arquivo: {e}")
         return None
 
+# Carregando os dados
 df = load_data()
 
-
-# 3. BARRA LATERAL (SIDEBAR) - Filtros e Navegação
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/3/34/Microsoft_Power_BI_Logo.png", width=50)
-st.sidebar.title("Menu de Navegação")
-
-page = st.sidebar.radio("Selecione a Página:", ["Dashboard Executivo", "Análise Detalhada"])
-
-st.sidebar.divider()
-st.sidebar.header("Filtros de Dados")
-paises = st.sidebar.multiselect("Países", options=df["Country"].unique(), default=df["Country"].unique())
-segmentos = st.sidebar.multiselect("Segmentos", options=df["Segment"].unique(), default=df["Segment"].unique())
-
-# Aplicando Filtros
 if df is not None:
+    st.title("📊 Desafio Streamlit - DIO")
+    
+    # Barra Lateral
     st.sidebar.header("Filtros")
     
-    # Aqui é onde dava o erro. Agora com o 'if', ele só roda se 'df' existir.
+    # Filtro de Países
     paises = st.sidebar.multiselect(
-        "Países", 
-        options=df["Country"].unique(), 
+        "Selecione os Países",
+        options=df["Country"].unique(),
         default=df["Country"].unique()
     )
-
-# 4. LÓGICA DAS PÁGINAS
-
-if page == "Dashboard Executivo":
-    st.title("📊 Relatório de Vendas (Financials)")
     
-    # KPIs - Indicadores principais
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Vendas Brutas", f"$ {df_filtered['Gross Sales'].sum()/1e6:.2f}M")
-    col2.metric("Unidades Vendidas", f"{df_filtered['Units Sold'].sum():,.0f}")
-    col3.metric("Lucro Total", f"$ {df_filtered['Profit'].sum()/1e6:.2f}M")
-    col4.metric("Descontos", f"$ {df_filtered['Discounts'].sum()/1e6:.2f}M")
+    # Filtro de Produtos
+    produtos = st.sidebar.multiselect(
+        "Selecione os Produtos",
+        options=df["Product"].unique(),
+        default=df["Product"].unique()
+    )
 
-    st.divider()
+    # Aplicando os filtros no dataframe
+    df_filtrado = df[df["Country"].isin(paises) & df["Product"].isin(produtos)]
 
-    # Gráficos Principais
-    c1, c2 = st.columns(2)
-    
-    with c1:
-        fig_vendas_mes = px.line(df_filtered.groupby("Month Name")["Sales"].sum().reset_index(), 
-                                 x="Month Name", y="Sales", title="Tendência de Vendas por Mês",
-                                 markers=True, line_shape="spline", color_discrete_sequence=["#1f77b4"])
-        st.plotly_chart(fig_vendas_mes, use_container_width=True)
+    # Exibindo métricas simples
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Vendas Totais", f"$ {df_filtrado['Sales'].sum():,.2f}")
+    with col2:
+        st.metric("Lucro Total", f"$ {df_filtrado['Profit'].sum():,.2f}")
+    with col3:
+        st.metric("Unidades Vendidas", f"{df_filtrado['Units Sold'].sum():,.0f}")
 
-    with c2:
-        fig_profit_country = px.bar(df_filtered.groupby("Country")["Profit"].sum().reset_index(),
-                                    x="Country", y="Profit", title="Lucro por País",
-                                    color="Profit", color_continuous_scale="Viridis")
-        st.plotly_chart(fig_profit_country, use_container_width=True)
+    # Exibindo o dataframe
+    st.subheader("Visualização dos Dados")
+    st.dataframe(df_filtrado)
 
-elif page == "Análise Detalhada":
-    st.title("🔍 Detalhamento e Troca de Visuais")
-    
-    # Recurso de "Troca de Visual" pedido no desafio (usando tabs ou selectbox)
-    tab1, tab2 = st.tabs(["📈 Visão por Produto", "📋 Tabela de Dados"])
+    # Gráfico simples
+    st.subheader("Vendas por Segmento")
+    st.bar_chart(df_filtrado.groupby("Segment")["Sales"].sum())
 
-    with tab1:
-        # Toggle para trocar o tipo de gráfico
-        tipo_grafico = st.segmented_control("Formato do Visual:", ["Barras", "Pizza"], default="Barras")
-        
-        if tipo_grafico == "Barras":
-            fig = px.bar(df_filtered, x="Product", y="Sales", color="Segment", barmode="group", title="Vendas por Produto e Segmento")
-        else:
-            fig = px.pie(df_filtered, values="Sales", names="Product", title="Distribuição de Vendas por Produto")
-        
-        st.plotly_chart(fig, use_container_width=True)
-
-    with tab2:
-        st.write("Dados Filtrados:")
-        st.dataframe(df_filtered, use_container_width=True)
-
-# Rodapé
-st.sidebar.info("Projeto desenvolvido para o Desafio DIO - Power BI Analyst.")
+else:
+    st.info("Por favor, verifique se o arquivo 'Financial Sample.xlsx' está na raiz do repositório.")
