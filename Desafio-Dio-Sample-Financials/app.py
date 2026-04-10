@@ -16,24 +16,12 @@ st.markdown("""
 # 2. CARREGAMENTO DOS DADOS
 @st.cache_data
 def load_data():
-    # Link direto para o dataset financials comum no Power BI
-    url = "https://raw.githubusercontent.com/julianazanelatto/power_bi_analyst/main/Financial%20Sample.xlsx"
-    df = pd.read_excel(url)
-    df.columns = df.columns.str.strip()
+    # O nome deve ser exatamente igual ao arquivo no GitHub
+    file_path = "https://raw.githubusercontent.com/julianazanelatto/power_bi_analyst/main/Financial%20Sample.xlsx" 
+    df = pd.read_excel(file_path, engine='openpyxl')
     return df
 
-df = load_data()
 
-@st.cache_data
-def load_data():
-    # Se o arquivo estiver na raiz do seu projeto no GitHub:
-    url = "Financial Sample.xlsx" 
-    # Use engine='openpyxl' explicitamente para arquivos .xlsx
-    df = pd.read_excel(url, engine='openpyxl')
-    return df
-    
-    df = load_data()
-    st.write(df)
 
 # 3. BARRA LATERAL (SIDEBAR) - Filtros e Navegação
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/3/34/Microsoft_Power_BI_Logo.png", width=50)
