@@ -4,7 +4,7 @@ Este projeto foi desenvolvido como um desafio de projeto para a **DIO (Digital I
 
 ## 🚀 Acesse o Dashboard Online
 A aplicação está publicada no Streamlit Cloud e pode ser acessada pelo link:
-👉 **[Visualizar Dashboard](https://sample-financial.streamlit.app/)**
+👉 **[Visualizar Dashboard](https://desafio-app-dio.streamlit.app/)**
 
 ---
 
